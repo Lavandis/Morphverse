@@ -35,7 +35,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -280,12 +281,44 @@ button {
   padding: 1.15rem 0 1.1rem;
 }
 
-.document-header h1 {
-  margin: 0;
+.title-editor {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.document-title-input,
+.field-textarea,
+.content-textarea,
+.tag-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: #151619;
+  color: var(--text);
+  outline: none;
+}
+
+.document-title-input {
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: clamp(2rem, 3vw, 2.65rem);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.15;
+}
+
+.field-textarea,
+.content-textarea {
+  padding: 0.75rem 0.85rem;
+  resize: vertical;
+  line-height: 1.65;
+}
+
+.tag-input {
+  min-width: 12rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.86rem;
 }
 
 .eyebrow {
@@ -352,6 +385,51 @@ button {
 
 .document-body {
   min-height: 12rem;
+}
+
+.content-textarea {
+  min-height: 12rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.toolbar-state {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.28rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.toolbar-state.dirty {
+  border-color: var(--accent-line);
+  color: #ddd2ff;
+  background: var(--accent-soft);
+}
+
+.tag-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  padding: 0.22rem 0.55rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.76rem;
+}
+
+.tag-chip span {
+  color: var(--text);
+  font-size: 0.74rem;
 }
 
 .document-links {
@@ -434,6 +512,20 @@ button {
 }
 
 .search-input:focus {
+  border-color: var(--accent-line);
+}
+
+.document-title-input:hover,
+.field-textarea:hover,
+.content-textarea:hover,
+.tag-input:hover {
+  border-color: var(--line-strong);
+}
+
+.document-title-input:focus,
+.field-textarea:focus,
+.content-textarea:focus,
+.tag-input:focus {
   border-color: var(--accent-line);
 }
 

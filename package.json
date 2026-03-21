@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm --workspace @morphverse/web run dev",
     "dev:api": "npm --workspace @morphverse/api run dev",
     "dev:jobs": "npm --workspace @morphverse/jobs run dev",
@@ -19,6 +20,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.2.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vite": "^7.1.7",

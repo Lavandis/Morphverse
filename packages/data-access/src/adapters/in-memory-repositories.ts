@@ -3,30 +3,30 @@ import type { CompositeRepository, MorphismRepository } from "../repositories/re
 
 const seedMorphisms: Morphism[] = [
   createStandardMorphism({
-    id: "seed-1",
-    title: "Problem framing",
-    input: "任务定义模糊",
-    output: "把问题收敛成可验证的接口和边界",
-    tags: ["strategy", "product"],
-    content: "先定义问题，再定义解。",
+    id: "morphism-1",
+    title: "ZK Rollup onboarding",
+    input: "用户不知道为什么 Layer2 值得迁移",
+    output: "用成本、吞吐和安全模型解释迁移动机",
+    tags: ["crypto", "education"],
+    content: "将复杂协议翻译为用户能行动的决策语言。",
+    connections: [{ targetMorphismId: "morphism-2", kind: "manual" }]
+  }),
+  createStandardMorphism({
+    id: "morphism-2",
+    title: "API contract thinking",
+    input: "团队接口频繁破坏前端开发节奏",
+    output: "先锁 DTO 与契约，再并行开发",
+    tags: ["engineering", "architecture"],
+    content: "把变化压缩到适配层，避免蔓延。",
     connections: []
   }),
   createStandardMorphism({
-    id: "seed-2",
-    title: "Interface-first delivery",
-    input: "多人协作时频繁相互阻塞",
-    output: "先对齐接口，再分模块并行推进",
-    tags: ["engineering", "team"],
-    content: "接口是协作秩序。",
-    connections: []
-  }),
-  createStandardMorphism({
-    id: "seed-3",
-    title: "Knowledge compression",
-    input: "长文本知识不易复用",
-    output: "将经验压缩为输入到输出的态射",
-    tags: ["knowledge", "systems"],
-    content: "让知识以变换而非分类存在。",
+    id: "morphism-3",
+    title: "Prompt scaffolding",
+    input: "大模型输出不稳定",
+    output: "通过上下文骨架和格式约束提高一致性",
+    tags: ["ai", "workflow"],
+    content: "输出质量往往受输入结构的边界控制。",
     connections: []
   })
 ];

@@ -11,10 +11,48 @@ describe("MorphismApplicationService", () => {
       ai: new MockMorphverseAi()
     });
 
-    const composite = service.createComposite("seed-1", "seed-2");
+    const composite = service.createComposite("morphism-1", "morphism-2");
 
     expect(composite.kind).toBe("composite");
     expect(composite.aiInsight.length).toBeGreaterThan(0);
     expect(composite.confidenceScore).toBeGreaterThan(0);
+  });
+
+  it("updates a standard morphism", () => {
+    const service = new MorphismApplicationService({
+      morphismRepository: new InMemoryMorphismRepository(),
+      compositeRepository: new InMemoryCompositeRepository(),
+      ai: new MockMorphverseAi()
+    });
+
+    const updated = service.updateMorphism("morphism-1", {
+      title: "Updated title",
+      input: "updated input",
+      output: "updated output",
+      tags: ["updated", "crypto"],
+      content: "updated content"
+    });
+
+    expect(updated.title).toBe("Updated title");
+    expect(updated.input).toBe("updated input");
+    expect(updated.tags).toEqual(["updated", "crypto"]);
+  });
+
+  it("updates only title and content for composites", () => {
+    const service = new MorphismApplicationService({
+      morphismRepository: new InMemoryMorphismRepository(),
+      compositeRepository: new InMemoryCompositeRepository(),
+      ai: new MockMorphverseAi()
+    });
+
+    const composite = service.createComposite("morphism-1", "morphism-2");
+    const updated = service.updateComposite(composite.id, {
+      title: "Refined composite",
+      content: "Refined content"
+    });
+
+    expect(updated.title).toBe("Refined composite");
+    expect(updated.content).toBe("Refined content");
+    expect(updated.sourceMorphismId).toBe("morphism-1");
   });
 });

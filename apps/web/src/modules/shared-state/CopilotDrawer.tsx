@@ -1,20 +1,14 @@
-import { useMemo, useState } from "react";
-import type { Morphism, StandardMorphism } from "@morphverse/domain";
+import { useEffect, useMemo, useState } from "react";
+import type { ComposeCandidate, Morphism, RelatedCandidate, StandardMorphism } from "@morphverse/domain";
 import { Drawer, MorphismCard } from "@morphverse/ui";
 import type { UiState } from "./state";
+import { morphismApi } from "../../shared/lib/api";
 
 interface CopilotDrawerProps {
   morphisms: Morphism[];
   state: UiState;
   onSelectCandidate: (id: string) => void;
   onClose: () => void;
-}
-
-function scoreByOverlap(base: string, candidate: string) {
-  const baseTokens = new Set(base.toLowerCase().split(/\W+/).filter(Boolean));
-  const candidateTokens = new Set(candidate.toLowerCase().split(/\W+/).filter(Boolean));
-  const overlap = [...baseTokens].filter((token) => candidateTokens.has(token)).length;
-  return Math.min(0.98, 0.42 + overlap * 0.14);
 }
 
 export function CopilotDrawer({
@@ -24,39 +18,69 @@ export function CopilotDrawer({
   onClose
 }: CopilotDrawerProps) {
   const [query, setQuery] = useState("");
+  const [candidates, setCandidates] = useState<(RelatedCandidate | ComposeCandidate)[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const active = morphisms.find((item) => item.id === state.copilotContext?.morphismId);
-  const standards = morphisms.filter((item): item is StandardMorphism => item.kind === "standard");
   const title = state.copilotMode === "compose" ? "寻找复合" : "寻找关联";
   const description =
     state.copilotMode === "compose"
       ? "按当前输出查找可衔接的输入。"
       : "围绕当前态射筛选相近条目。";
 
-  const candidates = useMemo(() => {
-    if (!active || active.kind !== "standard") {
-      return [];
+  useEffect(() => {
+    if (!state.drawerOpen || !active || active.kind !== "standard" || !state.copilotMode) {
+      setCandidates([]);
+      setLoading(false);
+      setErrorMessage(null);
+      return;
     }
 
-    const next = standards
-      .filter((item) => item.id !== active.id)
-      .filter((item) =>
-        state.copilotMode === "related" && query.trim()
-          ? `${item.title} ${item.input} ${item.output} ${item.tags.join(" ")}`
-              .toLowerCase()
-              .includes(query.trim().toLowerCase())
-          : true
-      )
-      .map((item) => ({
-        morphism: item,
-        score:
-          state.copilotMode === "compose"
-            ? scoreByOverlap(active.output, item.input)
-            : scoreByOverlap(`${active.input} ${active.output}`, `${item.input} ${item.output}`)
-      }))
-      .sort((left, right) => right.score - left.score);
+    let cancelled = false;
+    setLoading(true);
+    setErrorMessage(null);
 
-    return next;
-  }, [active, query, standards, state.copilotMode]);
+    const request =
+      state.copilotMode === "compose"
+        ? morphismApi.getComposeCandidates(active.id)
+        : morphismApi.getRelatedCandidates(active.id);
+
+    void request
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+        setCandidates(result);
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+        setErrorMessage(error instanceof Error ? error.message : "加载候选失败。");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active, state.copilotMode, state.drawerOpen]);
+
+  const visibleCandidates = useMemo(() => {
+    if (state.copilotMode !== "related" || !query.trim()) {
+      return candidates;
+    }
+
+    const normalizedQuery = query.trim().toLowerCase();
+    return candidates.filter(({ morphism }) =>
+      `${morphism.title} ${morphism.input} ${morphism.output} ${morphism.tags.join(" ")}`
+        .toLowerCase()
+        .includes(normalizedQuery)
+    );
+  }, [candidates, query, state.copilotMode]);
 
   return (
     <Drawer
@@ -87,7 +111,19 @@ export function CopilotDrawer({
         </label>
       ) : null}
       <div className="candidate-stack">
-        {candidates.map(({ morphism, score }) => (
+        {loading ? (
+          <div className="empty-card">
+            <p className="eyebrow">Loading</p>
+            <p>正在获取候选态射。</p>
+          </div>
+        ) : null}
+        {errorMessage ? (
+          <div className="empty-card">
+            <p className="eyebrow">Unavailable</p>
+            <p>{errorMessage}</p>
+          </div>
+        ) : null}
+        {visibleCandidates.map(({ morphism, score }) => (
           <MorphismCard
             key={morphism.id}
             badge={state.copilotMode === "compose" ? "Compose" : "Related"}
@@ -98,7 +134,7 @@ export function CopilotDrawer({
             onClick={() => onSelectCandidate(morphism.id)}
           />
         ))}
-        {candidates.length === 0 ? (
+        {!loading && !errorMessage && visibleCandidates.length === 0 ? (
           <div className="empty-card">
             <p className="eyebrow">No candidates</p>
             <p>换一个查询词，或者先创建更多态射，让 AI 有更多可以碰撞的语义材料。</p>

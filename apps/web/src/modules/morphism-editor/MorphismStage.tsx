@@ -1,22 +1,62 @@
+import { useEffect, useState, type KeyboardEvent } from "react";
 import type { Morphism } from "@morphverse/domain";
+import type { WorkspaceMode } from "./workspace";
 import { MorphismCard } from "@morphverse/ui";
 
 interface MorphismStageProps {
+  canCompose: boolean;
+  canSave: boolean;
+  dirty: boolean;
   morphism: Morphism;
   linkedMorphisms: Morphism[];
+  onAddTag: (tag: string) => void;
+  onCancel: () => void;
+  onChangeField: (field: "title" | "input" | "output" | "content", value: string) => void;
   onSelectMorphism: (id: string) => void;
   onOpenRelated: () => void;
   onOpenCompose: () => void;
+  onRemoveTag: (tag: string) => void;
+  onSave: () => void;
+  saving: boolean;
+  workspaceMode: WorkspaceMode;
 }
 
 export function MorphismStage({
+  canCompose,
+  canSave,
+  dirty,
   morphism,
   linkedMorphisms,
+  onAddTag,
+  onCancel,
+  onChangeField,
   onSelectMorphism,
   onOpenRelated,
-  onOpenCompose
+  onOpenCompose,
+  onRemoveTag,
+  onSave,
+  saving,
+  workspaceMode
 }: MorphismStageProps) {
+  const [tagInput, setTagInput] = useState("");
   const kindLabel = morphism.kind === "composite" ? "复合态射" : "普通态射";
+  const isNewDraft = workspaceMode === "new-draft";
+  const canEditStandard = morphism.kind === "standard";
+  const canCancel = isNewDraft || dirty;
+
+  useEffect(() => {
+    setTagInput("");
+  }, [morphism.id]);
+
+  function handleTagKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    onAddTag(tagInput);
+    setTagInput("");
+  }
 
   return (
     <main className="panel stage-panel">
@@ -24,6 +64,7 @@ export function MorphismStage({
         <div>
           <p className="eyebrow">Morphism Note</p>
           <p className="document-meta">
+            {isNewDraft ? "未保存草稿 · " : ""}
             {kindLabel}
             {morphism.kind === "composite"
               ? ` · Confidence ${Math.round(morphism.confidenceScore * 100)}%`
@@ -31,9 +72,28 @@ export function MorphismStage({
           </p>
         </div>
         <div className="stage-actions">
+          <span className={dirty || isNewDraft ? "toolbar-state dirty" : "toolbar-state"}>
+            {isNewDraft ? "草稿" : dirty ? "未保存" : "已保存"}
+          </span>
+          <button
+            className="secondary-action"
+            disabled={!canCancel || saving}
+            onClick={onCancel}
+            type="button"
+          >
+            取消
+          </button>
+          <button
+            className="primary-action"
+            disabled={!canSave}
+            onClick={onSave}
+            type="button"
+          >
+            {saving ? "保存中..." : "保存"}
+          </button>
           <button
             className="accent-action"
-            disabled={morphism.kind !== "standard"}
+            disabled={!canCompose || saving}
             onClick={onOpenCompose}
             type="button"
           >
@@ -43,7 +103,15 @@ export function MorphismStage({
       </header>
 
       <section className="document-header">
-        <h1>{morphism.title}</h1>
+        <label className="title-editor">
+          <span className="eyebrow">Title</span>
+          <input
+            className="document-title-input"
+            onChange={(event) => onChangeField("title", event.target.value)}
+            type="text"
+            value={morphism.title}
+          />
+        </label>
         <div className="title-strip">
           <span className="pill pill-primary">{kindLabel}</span>
           {morphism.kind === "composite" ? (
@@ -57,24 +125,65 @@ export function MorphismStage({
           <div className="property-row">
             <div className="property-label">Input</div>
             <div className="property-value">
-              <p className="lead-copy">{morphism.input}</p>
+              {canEditStandard ? (
+                <textarea
+                  className="field-textarea"
+                  onChange={(event) => onChangeField("input", event.target.value)}
+                  rows={3}
+                  value={morphism.input}
+                />
+              ) : (
+                <p className="lead-copy">{morphism.input}</p>
+              )}
             </div>
           </div>
           <div className="property-row">
             <div className="property-label">Output</div>
             <div className="property-value">
-              <p className="lead-copy">{morphism.output}</p>
+              {canEditStandard ? (
+                <textarea
+                  className="field-textarea"
+                  onChange={(event) => onChangeField("output", event.target.value)}
+                  rows={3}
+                  value={morphism.output}
+                />
+              ) : (
+                <p className="lead-copy">{morphism.output}</p>
+              )}
             </div>
           </div>
           <div className="property-row">
             <div className="property-label">Tags</div>
             <div className="property-inline">
-              {morphism.tags.map((tag) => (
-                <span key={tag} className="tag-pill">
-                  #{tag}
-                </span>
-              ))}
-              {morphism.kind === "standard" ? <button className="tag-action">添加标签</button> : null}
+              <div className="tag-editor">
+                {morphism.tags.map((tag) =>
+                  canEditStandard ? (
+                    <button
+                      key={tag}
+                      className="tag-chip"
+                      onClick={() => onRemoveTag(tag)}
+                      type="button"
+                    >
+                      #{tag}
+                      <span>×</span>
+                    </button>
+                  ) : (
+                    <span key={tag} className="tag-pill">
+                      #{tag}
+                    </span>
+                  )
+                )}
+                {canEditStandard ? (
+                  <input
+                    className="tag-input"
+                    onChange={(event) => setTagInput(event.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder="输入标签后回车"
+                    type="text"
+                    value={tagInput}
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
           {morphism.kind === "composite" ? (
@@ -103,7 +212,13 @@ export function MorphismStage({
           <span className="eyebrow">Note</span>
         </div>
         <div className="document-body">
-          <p>{morphism.content ?? "这一条态射还没有更长的 Markdown 内容。"}</p>
+          <textarea
+            className="content-textarea"
+            onChange={(event) => onChangeField("content", event.target.value)}
+            placeholder="在这里继续扩展你的态射内容..."
+            rows={10}
+            value={morphism.content ?? ""}
+          />
         </div>
       </section>
 
@@ -112,7 +227,7 @@ export function MorphismStage({
           <h2>Connections</h2>
           <button
             className="secondary-action"
-            disabled={morphism.kind !== "standard"}
+            disabled={!canCompose || saving}
             onClick={onOpenRelated}
             type="button"
           >

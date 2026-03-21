@@ -1,17 +1,21 @@
 import type { Morphism } from "@morphverse/domain";
 
 interface MorphismListPanelProps {
+  draftId?: string;
   items: Morphism[];
   selectedId: string;
   open: boolean;
+  onCreate: () => void;
   onClose: () => void;
   onSelect: (id: string) => void;
 }
 
 export function MorphismListPanel({
+  draftId,
   items,
   selectedId,
   open,
+  onCreate,
   onClose,
   onSelect
 }: MorphismListPanelProps) {
@@ -26,7 +30,9 @@ export function MorphismListPanel({
           ×
         </button>
       </div>
-      <button className="primary-action">新建</button>
+      <button className="primary-action" onClick={onCreate} type="button">
+        新建
+      </button>
       <div className="drawer-meta">
         <span>{items.length} 条记录</span>
       </div>
@@ -40,9 +46,11 @@ export function MorphismListPanel({
           >
             <div className="list-card-topline">
               <strong>{item.title}</strong>
-              <span className="list-card-kind">{item.kind === "composite" ? "复合" : "普通"}</span>
+              <span className="list-card-kind">
+                {item.id === draftId ? "草稿" : item.kind === "composite" ? "复合" : "普通"}
+              </span>
             </div>
-            <span className="list-card-copy">{item.output}</span>
+            <span className="list-card-copy">{item.output || "尚未填写输出"}</span>
             <span className="list-card-tags">
               {item.tags.slice(0, 3).join(" · ") || "未添加标签"}
             </span>

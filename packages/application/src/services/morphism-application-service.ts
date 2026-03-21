@@ -16,6 +16,19 @@ interface CreateMorphismInput {
   content?: string;
 }
 
+interface UpdateMorphismInput {
+  title: string;
+  input: string;
+  output: string;
+  tags?: string[];
+  content?: string;
+}
+
+interface UpdateCompositeInput {
+  title: string;
+  content?: string;
+}
+
 export class MorphismApplicationService {
   constructor(private readonly deps: MorphismApplicationServiceDeps) {}
 
@@ -41,6 +54,30 @@ export class MorphismApplicationService {
       connections: []
     });
     return this.deps.morphismRepository.save(morphism);
+  }
+
+  updateMorphism(id: string, input: UpdateMorphismInput) {
+    const morphism = this.requireStandard(id);
+    const updated = createStandardMorphism({
+      id: morphism.id,
+      title: input.title,
+      input: input.input,
+      output: input.output,
+      tags: input.tags,
+      content: input.content,
+      connections: morphism.connections
+    });
+    return this.deps.morphismRepository.save(updated);
+  }
+
+  updateComposite(id: string, input: UpdateCompositeInput) {
+    const composite = this.requireComposite(id);
+    const updated = {
+      ...composite,
+      title: input.title.trim(),
+      content: input.content?.trim()
+    };
+    return this.deps.compositeRepository.save(updated);
   }
 
   addConnection(sourceId: string, targetMorphismId: string) {
@@ -87,6 +124,14 @@ export class MorphismApplicationService {
       throw new Error(`Standard morphism "${id}" not found.`);
     }
     return morphism;
+  }
+
+  private requireComposite(id: string) {
+    const composite = this.deps.compositeRepository.list().find((item) => item.id === id);
+    if (!composite) {
+      throw new Error(`Composite morphism "${id}" not found.`);
+    }
+    return composite;
   }
 }
 
