@@ -52,6 +52,13 @@ export function createRouteHandler(service = morphismService) {
         return sendJson(response, 200, service.updateMorphism(parts[1], input));
       }
 
+      if (parts[0] === "morphisms" && parts[1] && method === "DELETE" && parts.length === 2) {
+        service.deleteMorphism(parts[1]);
+        response.writeHead(204);
+        response.end();
+        return;
+      }
+
       if (parts[0] === "morphisms" && parts[1] && parts[2] === "connections" && method === "POST") {
         const input = await readBody<{ targetMorphismId: string }>(request);
         return sendJson(
@@ -77,6 +84,13 @@ export function createRouteHandler(service = morphismService) {
       if (parts[0] === "composites" && parts[1] && method === "PATCH" && parts.length === 2) {
         const input = await readBody<{ title: string; content?: string }>(request);
         return sendJson(response, 200, service.updateComposite(parts[1], input));
+      }
+
+      if (parts[0] === "composites" && parts[1] && method === "DELETE" && parts.length === 2) {
+        service.deleteComposite(parts[1]);
+        response.writeHead(204);
+        response.end();
+        return;
       }
 
       return sendJson(response, 404, { message: "Route not found" });

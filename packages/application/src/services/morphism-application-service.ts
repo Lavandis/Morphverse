@@ -118,6 +118,45 @@ export class MorphismApplicationService {
     return this.deps.compositeRepository.save(composite);
   }
 
+  deleteMorphism(id: string) {
+    const morphism = this.requireStandard(id);
+
+    for (const item of this.deps.morphismRepository.listStandards()) {
+      if (item.id === morphism.id) {
+        continue;
+      }
+
+      const nextConnections = item.connections.filter(
+        (connection) => connection.targetMorphismId !== morphism.id
+      );
+
+      if (nextConnections.length !== item.connections.length) {
+        this.deps.morphismRepository.save({
+          ...item,
+          connections: nextConnections
+        });
+      }
+    }
+
+    for (const composite of this.deps.compositeRepository.list()) {
+      if (
+        composite.sourceMorphismId === morphism.id ||
+        composite.targetMorphismId === morphism.id
+      ) {
+        this.deps.compositeRepository.delete(composite.id);
+      }
+    }
+
+    this.deps.morphismRepository.delete(morphism.id);
+    return morphism;
+  }
+
+  deleteComposite(id: string) {
+    const composite = this.requireComposite(id);
+    this.deps.compositeRepository.delete(composite.id);
+    return composite;
+  }
+
   private requireStandard(id: string) {
     const morphism = this.deps.morphismRepository.getById(id);
     if (!morphism || morphism.kind !== "standard") {

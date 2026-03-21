@@ -6,12 +6,14 @@ import { MorphismCard } from "@morphverse/ui";
 interface MorphismStageProps {
   canCompose: boolean;
   canSave: boolean;
+  canDelete: boolean;
   dirty: boolean;
   morphism: Morphism;
   linkedMorphisms: Morphism[];
   onAddTag: (tag: string) => void;
   onCancel: () => void;
   onChangeField: (field: "title" | "input" | "output" | "content", value: string) => void;
+  onDelete: () => void;
   onSelectMorphism: (id: string) => void;
   onOpenRelated: () => void;
   onOpenCompose: () => void;
@@ -24,12 +26,14 @@ interface MorphismStageProps {
 export function MorphismStage({
   canCompose,
   canSave,
+  canDelete,
   dirty,
   morphism,
   linkedMorphisms,
   onAddTag,
   onCancel,
   onChangeField,
+  onDelete,
   onSelectMorphism,
   onOpenRelated,
   onOpenCompose,
@@ -82,6 +86,14 @@ export function MorphismStage({
             type="button"
           >
             取消
+          </button>
+          <button
+            className="danger-action"
+            disabled={!canDelete || saving}
+            onClick={onDelete}
+            type="button"
+          >
+            {isNewDraft ? "删除草稿" : "删除"}
           </button>
           <button
             className="primary-action"

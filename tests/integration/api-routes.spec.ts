@@ -2,15 +2,20 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
+import { mkdtempSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { createMorphismService } from "../../apps/api/src/lib/container";
 import { createRouteHandler } from "../../apps/api/src/routes/router";
 
 describe("API routes", () => {
   let server: Server;
   let baseUrl = "";
+  const tempDir = mkdtempSync(join(tmpdir(), "morphverse-api-routes-"));
+  const storagePath = join(tempDir, "morphisms.json");
 
   beforeAll(async () => {
-    const routeRequest = createRouteHandler(createMorphismService());
+    const routeRequest = createRouteHandler(createMorphismService({ storagePath }));
     server = createServer((request, response) => {
       void routeRequest(request, response);
     });
@@ -99,5 +104,35 @@ describe("API routes", () => {
     });
 
     expect(invalidResponse.status).toBe(400);
+  });
+
+  it("deletes a standard morphism and cascades linked data cleanup", async () => {
+    const compositeResponse = await fetch(`${baseUrl}/composites`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sourceId: "morphism-1",
+        targetId: "morphism-2"
+      })
+    });
+
+    expect(compositeResponse.status).toBe(201);
+    const composite = await compositeResponse.json();
+
+    const deleteResponse = await fetch(`${baseUrl}/morphisms/morphism-2`, {
+      method: "DELETE"
+    });
+
+    expect(deleteResponse.status).toBe(204);
+
+    const listResponse = await fetch(`${baseUrl}/morphisms`);
+    expect(listResponse.status).toBe(200);
+    const items = await listResponse.json();
+
+    expect(items.find((item: { id: string }) => item.id === "morphism-2")).toBeUndefined();
+    expect(items.find((item: { id: string }) => item.id === composite.id)).toBeUndefined();
+    expect(items.find((item: { id: string }) => item.id === "morphism-1")).toMatchObject({
+      connections: []
+    });
   });
 });

@@ -42,6 +42,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(payload?.message ?? "Request failed.");
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
@@ -83,6 +87,16 @@ export const morphismApi = {
     return request<CompositeMorphism>(`/composites/${id}`, {
       method: "PATCH",
       body: JSON.stringify(input)
+    });
+  },
+  deleteMorphism(id: string) {
+    return request<void>(`/morphisms/${id}`, {
+      method: "DELETE"
+    });
+  },
+  deleteComposite(id: string) {
+    return request<void>(`/composites/${id}`, {
+      method: "DELETE"
     });
   }
 };

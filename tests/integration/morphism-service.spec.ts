@@ -55,4 +55,22 @@ describe("MorphismApplicationService", () => {
     expect(updated.content).toBe("Refined content");
     expect(updated.sourceMorphismId).toBe("morphism-1");
   });
+
+  it("deletes a standard morphism and cleans dependent links and composites", () => {
+    const service = new MorphismApplicationService({
+      morphismRepository: new InMemoryMorphismRepository(),
+      compositeRepository: new InMemoryCompositeRepository(),
+      ai: new MockMorphverseAi()
+    });
+
+    const composite = service.createComposite("morphism-1", "morphism-2");
+    service.deleteMorphism("morphism-2");
+
+    expect(service.getMorphism("morphism-2")).toBeUndefined();
+    expect(service.getMorphism(composite.id)).toBeUndefined();
+    expect(service.getMorphism("morphism-1")).toMatchObject({
+      kind: "standard",
+      connections: []
+    });
+  });
 });

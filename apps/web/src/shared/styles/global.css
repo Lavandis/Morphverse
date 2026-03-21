@@ -112,7 +112,8 @@ button {
 
 .primary-action,
 .accent-action,
-.secondary-action {
+.secondary-action,
+.danger-action {
   border-radius: 0.65rem;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--line);
@@ -130,6 +131,12 @@ button {
 
 .secondary-action {
   background: transparent;
+}
+
+.danger-action {
+  color: #f2b7bf;
+  border-color: rgba(214, 87, 104, 0.28);
+  background: rgba(214, 87, 104, 0.08);
 }
 
 .list-stack,
@@ -604,6 +611,10 @@ button {
 button:hover,
 .search-input:hover {
   border-color: var(--line-strong);
+}
+
+.danger-action:hover {
+  border-color: rgba(214, 87, 104, 0.42);
 }
 
 .accent-action:hover,

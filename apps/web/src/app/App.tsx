@@ -95,6 +95,7 @@ export function App() {
     isDraftValid(draftValues) &&
     Boolean(draftValues) &&
     (workspaceMode === "new-draft" || dirty);
+  const canDelete = Boolean(currentMorphism) && !saving;
 
   function openCopilot(context: CopilotContext) {
     setCopilot({
@@ -181,6 +182,82 @@ export function App() {
 
     if (lastCommittedSnapshot) {
       setDraftValues(lastCommittedSnapshot);
+    }
+  }
+
+  function resetWorkspace(nextItems: Morphism[], preferredId?: string) {
+    if (nextItems.length === 0) {
+      setMorphisms([]);
+      setSelectedId("");
+      setWorkspaceMode("existing");
+      setDraftValues(null);
+      setLastCommittedSnapshot(null);
+      setPreviousSelectedId(null);
+      setCopilot(createInitialUiState());
+      return;
+    }
+
+    const nextSelected = nextItems.find((item) => item.id === preferredId) ?? nextItems[0];
+    const nextDraft = toWorkspaceDraft(nextSelected);
+
+    setMorphisms(nextItems);
+    setSelectedId(nextSelected.id);
+    setWorkspaceMode("existing");
+    setDraftValues(nextDraft);
+    setLastCommittedSnapshot(nextDraft);
+    setPreviousSelectedId(null);
+    setCopilot(createInitialUiState());
+  }
+
+  async function reloadAfterDelete(deletedId: string) {
+    const nextItems = await morphismApi.list();
+    const preferredId =
+      morphisms
+        .filter((item) => item.id !== deletedId)
+        .map((item) => item.id)
+        .find((id) => nextItems.some((item) => item.id === id)) ?? nextItems[0]?.id;
+
+    resetWorkspace(nextItems, preferredId);
+  }
+
+  async function handleDelete() {
+    if (!currentMorphism) {
+      return;
+    }
+
+    if (workspaceMode === "new-draft") {
+      if (!window.confirm("删除这条未保存草稿？")) {
+        return;
+      }
+
+      handleCancel();
+      return;
+    }
+
+    const confirmed =
+      currentMorphism.kind === "standard"
+        ? window.confirm("删除当前态射？相关连接和依赖它的复合态射也会一并移除。")
+        : window.confirm("删除当前复合态射？");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      if (currentMorphism.kind === "standard") {
+        await morphismApi.deleteMorphism(currentMorphism.id);
+      } else {
+        await morphismApi.deleteComposite(currentMorphism.id);
+      }
+
+      await reloadAfterDelete(currentMorphism.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "删除失败。";
+      window.alert(message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -289,6 +366,7 @@ export function App() {
         <div className="workspace">
           <MorphismStage
             canCompose={canUseCopilot}
+            canDelete={canDelete}
             canSave={canSave}
             dirty={dirty}
             linkedMorphisms={linkedMorphisms}
@@ -296,6 +374,7 @@ export function App() {
             onAddTag={handleAddTag}
             onCancel={handleCancel}
             onChangeField={handleDraftChange}
+            onDelete={handleDelete}
             onOpenRelated={() =>
               canUseCopilot ? openCopilot({ mode: "related", morphismId: currentMorphism.id }) : undefined
             }
