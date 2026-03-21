@@ -1,0 +1,27 @@
+{
+  "name": "morphverse",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace @morphverse/web run dev",
+    "dev:api": "npm --workspace @morphverse/api run dev",
+    "dev:jobs": "npm --workspace @morphverse/jobs run dev",
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "check": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  }
+}

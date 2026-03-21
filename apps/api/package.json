@@ -1,0 +1,17 @@
+{
+  "name": "@morphverse/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@morphverse/ai": "*",
+    "@morphverse/application": "*",
+    "@morphverse/data-access": "*",
+    "@morphverse/domain": "*"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@morphverse/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@morphverse/ai": "*",
+    "@morphverse/application": "*",
+    "@morphverse/data-access": "*"
+  }
+}
